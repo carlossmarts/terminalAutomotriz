@@ -5,21 +5,13 @@ facilitar la lectura de los datos.*/
 
 use proyectoBD;
 
-CREATE INDEX index_idModelo ON automovil (idModelo); 
-CREATE INDEX index_idPedidoModelo ON automovil (idPedido, idModelo);
+/* REPORTE 11 */
 
-select * from automovil use index (index_idModelo)
-    ORDER BY (idModelo);
-    
-select * from automovil use index (index_idPedidoModelo)
-	WHERE idPedido=1 AND idModelo=1;
-    
-CREATE INDEX index_idModelo ON lineaDeMontaje (idModelo);
-    
-select * from lineaDeMontaje  use index (index_idModelo)
-	WHERE idModelo=1;
-    
-CREATE INDEX index_fechaCuit ON pedido (fechaHora, cuitConcesionaria);
+CREATE INDEX index_idPedido ON automovil (idPedido); 
+CREATE INDEX index_fechaPedido ON automovil (idPedido, fechaTerminado);
+CREATE INDEX index_hora ON automovilxestacion (horaIngreso);
 
-select * from pedido use index (index_fechaCuit)
-	WHERE fechaHora = '2019-10-28 22:08:57' order by cuitConcesionaria;
+/* REPORTE 12 */
+
+CREATE INDEX index_idLineaDeMontaje ON insumoXestacion (idLineaDeMontaje); 
+CREATE INDEX index_codigoLineaDeMontaje ON insumoXestacion (codigoInsumo, idLineaDeMontaje);
