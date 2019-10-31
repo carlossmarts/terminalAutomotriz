@@ -6,6 +6,7 @@ encuentra finalizado, y si no esta terminado, indicar en qué estación se encue
 **/
 
 -- Funcion para saber si el pedido Existe, y realizar validaciones cuando se ejecute el procedimiento vehiculosFinalizados
+drop function if exists existePedido;
 delimiter //
 CREATE function existePedido(
 	_idPedido int)
@@ -20,7 +21,7 @@ delimiter ;
 drop procedure if exists vehiculosFinalizados;
 delimiter //
 -- Entrada: Numero de Pedido
--- Salida: Lista Automovil: nroChasis, terminado (1=si o 0=no), estacion (compuesta por la Tarea y la Linea de Monataje)
+-- Salida: Lista Automovil: nroChasis,estado (En proceso o Terminado) estacion (compuesta por la Tarea y la Linea de Monataje)
 -- La estacion solo se indica si el Automovil no esta terminado
 CREATE PROCEDURE vehiculosFinalizados(
 	in _nroPedido int,
@@ -43,9 +44,9 @@ WHERE
     and e.horaIngreso = (SELECT 
             MAX(horaIngreso)
         FROM
-            automovilxestacion
+            automovilxestacion axe
         WHERE
-            a.idPedido = _nroPedido AND horaEgreso IS NULL)
+            a.idPedido = _nroPedido AND horaEgreso IS NULL AND e.nroChasis = axe.nroChasis)
 UNION SELECT 
     a.nroChasis,
     a.idPedido,
@@ -56,7 +57,15 @@ FROM
     Automovil a
 WHERE
     a.fechaTerminado is not null
-    and idPedido=_nroPedido;
+    and idPedido=_nroPedido
+UNION SELECT 
+	a.nroChasis,
+    a.idPedido,
+    'Pendiente' AS estado,
+    0 AS tarea,
+    0 AS linea
+FROM Automovil a
+WHERE NOT exists (SELECT NULL FROM automovilXestacion e WHERE e.nroChasis = a.nroChasis) AND idPedido=_nroPedido ;
 else 
 	select 'error, no existePedido' into _msjRetorno;
 	select -1 into _valorRetorno;
@@ -65,20 +74,41 @@ END
 //
 delimiter ;
 -- PRUEBA REPORTE 11
-SELECT @msj, @valoRetorno;
+-- PROCESAMOS EL PEDIDO 1 (SALEN DEL AUTO 1 AL 10) Y EL PEDIDO 2
 call procesarPedido (1,@m,@v);
+call procesarPedido (2,@m,@v);
+-- PROCESAMOS EL 1 HASTA TERMINARLO
 call iniciarMontaje(1,@msj,@valor);
+do sleep (2);
+call continuarMontaje(1,@m,@v);
+do sleep (2);
+call continuarMontaje(1,@m,@v);
+do sleep (2);
+call continuarMontaje(1,@m,@v);
+do sleep (2);
+call continuarMontaje(1,@m,@v);
+do sleep (2);
+call continuarMontaje(1,@m,@v);
+do sleep (2);
+call continuarMontaje(1,@m,@v);
+call vehiculosFinalizados(1,@msj,@valorRetorno);
+
+-- PROCESAMOS EL 2 HASTA LA TAREA 2
 call iniciarMontaje(2,@msj,@valor);
-call continuarMontaje(1,@m,@v);
-call continuarMontaje(1,@m,@v);
-call continuarMontaje(1,@m,@v);
-call continuarMontaje(1,@m,@v);
-call continuarMontaje(1,@m,@v);
-call continuarMontaje(1,@m,@v);
+do sleep (2);
 call continuarMontaje(2,@m,@v);
+do sleep (2);
+call continuarMontaje(2,@m,@v);
+do sleep (2);
+call vehiculosFinalizados(1,@msj,@valorRetorno);
+
+-- PROCESAMOS EL 3 HASTA LA TAREA 1
+call iniciarMontaje(3,@msj,@valor);
+do sleep (2);
+call continuarMontaje(3,@m,@v);
+do sleep (2);
 call vehiculosFinalizados(1,@msj,@valorRetorno);
 -- -----------------------------------------------------------------------------------
-
 SELECT 
     *
 FROM
@@ -87,4 +117,3 @@ SELECT
     *
 FROM
     automovilXestacion;
-
